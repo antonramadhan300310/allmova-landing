@@ -22,7 +22,7 @@ export const siteConfig = {
    * GANTI NOMOR DI BARIS INI dengan nomor WhatsApp bisnis Anda.
    * Contoh: 6281234567890 (62 = kode negara Indonesia, tanpa spasi/tanda hubung).
    */
-  adminWhatsAppNumber: "6281234567890",
+  adminWhatsAppNumber: "6285884455745",
 
   /** Masa trial Pro untuk setiap pendaftar baru. */
   trialDays: 14,
