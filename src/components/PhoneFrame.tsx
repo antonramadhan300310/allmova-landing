@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ImageOff, Smartphone } from "lucide-react";
 
 type PhoneFrameProps = {
@@ -43,13 +43,9 @@ export function PhoneFrame({
   glow = false,
   priority = false,
 }: PhoneFrameProps) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-  useEffect(() => {
-    setFailed(false);
-  }, [src]);
-
-  const showImage = available && !failed;
+  const showImage = available && failedSrc !== src;
 
   return (
     <div className={`relative ${className}`}>
@@ -74,7 +70,7 @@ export function PhoneFrame({
                 alt={alt}
                 loading={priority ? "eager" : "lazy"}
                 decoding="async"
-                onError={() => setFailed(true)}
+                onError={() => setFailedSrc(src)}
                 className="h-full w-full object-cover object-top"
               />
             ) : (
