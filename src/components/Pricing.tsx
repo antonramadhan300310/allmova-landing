@@ -213,8 +213,7 @@ export function Pricing() {
             <div className="mt-auto pt-7">
               <a
                 href={siteConfig.apkDownloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                download="ALLMOVA.apk"
                 className="btn-ghost min-h-[48px] w-full px-5 text-sm"
               >
                 <Download className="h-4 w-4" strokeWidth={2.4} />
@@ -286,8 +285,7 @@ export function Pricing() {
             <div className="relative mt-auto flex flex-col gap-2.5 pt-7">
               <a
                 href={siteConfig.apkDownloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                download="ALLMOVA.apk"
                 className="btn-lime min-h-[50px] w-full px-5 text-sm"
               >
                 <Zap className="h-4 w-4" strokeWidth={2.6} />

@@ -70,8 +70,7 @@ export function Hero({ record }: { record: Screenshot }) {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
               href={siteConfig.apkDownloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              download="ALLMOVA.apk"
               className="btn-lime min-h-[52px] px-6 text-[15px] text-balance"
             >
               <Download className="h-[18px] w-[18px]" strokeWidth={2.6} />

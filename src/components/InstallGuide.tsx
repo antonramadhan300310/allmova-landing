@@ -40,8 +40,7 @@ export function InstallGuide() {
 
             <a
               href={siteConfig.apkDownloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              download="ALLMOVA.apk"
               className="btn-lime mt-6 min-h-[48px] px-5 text-sm"
             >
               <Download className="h-4 w-4" strokeWidth={2.6} />
