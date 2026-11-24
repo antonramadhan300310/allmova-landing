@@ -19,10 +19,17 @@ Semua konten utama ada di **`src/config/site.ts`**:
 | --- | --- |
 | `adminWhatsAppNumber` | Nomor WhatsApp admin (format `62...`, tanpa `+`). Ganti di baris ini. |
 | `appVersion` | Versi yang tampil di badge, tombol, dan footer. |
-| `apkDownloadUrl` | Tautan unduhan APK (halaman rilis GitHub). |
+| `apkDownloadUrl` | Path file APK lokal, default `/downloads/ALLMOVA.apk`. |
 | `pricing` | Harga Bulanan / Tahunan beserta label diskon. |
 
 Link WhatsApp Pro dibuat otomatis oleh `getWhatsAppProUrl(billingCycle)` dengan pesan sesuai paket yang dipilih pengunjung.
+
+## File APK
+
+Letakkan file APK di `public/downloads/ALLMOVA.apk`. Folder ini sudah disertakan
+lewat `public/downloads/.gitkeep`, jadi cukup unggah APK-nya lalu commit. Tombol
+unduhan memakai atribut `download="ALLMOVA.apk"` sehingga browser HP langsung
+menyimpan file (direct download), bukan membuka tab baru.
 
 ## Screenshot aplikasi
 

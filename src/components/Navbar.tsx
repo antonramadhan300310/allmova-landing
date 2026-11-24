@@ -52,8 +52,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <a
             href={siteConfig.apkDownloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            download="ALLMOVA.apk"
             className="btn-lime h-10 px-3.5 text-[12.5px] sm:px-4 sm:text-[13px]"
           >
             <Download className="h-4 w-4" strokeWidth={2.4} />
@@ -97,8 +96,7 @@ export function Navbar() {
           </div>
           <a
             href={siteConfig.apkDownloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            download="ALLMOVA.apk"
             onClick={() => setOpen(false)}
             className="btn-lime mt-5 h-12 w-full"
           >

@@ -13,9 +13,8 @@ export const siteConfig = {
   /** Versi aplikasi Android yang sedang dirilis. */
   appVersion: "v1.2.0",
 
-  /** URL unduhan APK Android (halaman rilis GitHub). */
-  apkDownloadUrl:
-    "https://github.com/antonramadhan300310/strava-3d-app/releases/latest",
+  /** Path file APK lokal di folder public (direct download). */
+  apkDownloadUrl: "/downloads/ALLMOVA.apk",
 
   /**
    * Nomor WhatsApp admin dalam format internasional tanpa tanda "+".

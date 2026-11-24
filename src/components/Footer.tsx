@@ -48,8 +48,7 @@ export function Footer() {
                 <li>
                   <a
                     href={siteConfig.apkDownloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    download="ALLMOVA.apk"
                     className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-white/45 transition-colors hover:text-white"
                   >
                     <Download className="h-3.5 w-3.5" strokeWidth={2.2} />
