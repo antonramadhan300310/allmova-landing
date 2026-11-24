@@ -1,12 +1,8 @@
 import { ArrowRight, MoveHorizontal } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { screenshots } from "@/lib/screenshots";
+import type { Screenshot } from "@/lib/screenshots";
 
-export function Screenshots({
-  availability,
-}: {
-  availability: Record<string, boolean>;
-}) {
+export function Screenshots({ screenshots }: { screenshots: Screenshot[] }) {
   return (
     <section
       id="screenshots"
@@ -38,13 +34,14 @@ export function Screenshots({
         <div className="-mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-4 no-scrollbar sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-5 lg:gap-5">
           {screenshots.map((shot, index) => (
             <figure
-              key={shot.src}
+              key={shot.base}
               className="group w-[240px] shrink-0 snap-center sm:w-auto"
             >
               <PhoneFrame
-                src={shot.src}
+                src={shot.base}
+                sources={shot.sources}
                 alt={`Screenshot ALLMOVA — ${shot.title}`}
-                available={availability[shot.src] ?? false}
+                available={shot.available}
                 className="transition-transform duration-300 group-hover:-translate-y-1.5"
               />
               <figcaption className="mt-4">

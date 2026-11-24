@@ -4,9 +4,12 @@ import { useState } from "react";
 import { ImageOff, Smartphone } from "lucide-react";
 
 type PhoneFrameProps = {
+  /** Path dasar tanpa ekstensi, mis. `/screenshots/1-record`. */
   src: string;
+  /** Kandidat URL berurutan (png -> jpg -> jpeg -> webp). */
+  sources?: string[];
   alt: string;
-  /** True bila file PNG sudah tersedia di `public/`. */
+  /** True bila build menemukan minimal satu file screenshot. */
   available?: boolean;
   className?: string;
   /** Tampilkan efek glow lime di belakang perangkat. */
@@ -26,10 +29,11 @@ function Placeholder({ src }: { src: string }) {
         Screenshot belum diunggah
       </p>
       <p className="relative break-all rounded-lg border border-white/10 bg-black/40 px-2 py-1 font-mono text-[9px] leading-relaxed text-lime/80">
-        Upload: public{src}
+        Upload: public{src}.png
       </p>
       <p className="relative max-w-[85%] text-[9.5px] leading-relaxed text-white/30">
-        Bingkai ini otomatis menampilkan gambar setelah file PNG tersedia.
+        Format didukung: PNG, JPG, JPEG, WEBP — bingkai tampil otomatis setelah
+        file tersedia.
       </p>
     </div>
   );
@@ -37,15 +41,17 @@ function Placeholder({ src }: { src: string }) {
 
 export function PhoneFrame({
   src,
+  sources,
   alt,
   available = true,
   className = "",
   glow = false,
   priority = false,
 }: PhoneFrameProps) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const candidates = sources && sources.length > 0 ? sources : [src];
+  const [failedCount, setFailedCount] = useState(0);
 
-  const showImage = available && failedSrc !== src;
+  const currentSrc = available ? candidates[failedCount] : undefined;
 
   return (
     <div className={`relative ${className}`}>
@@ -57,20 +63,15 @@ export function PhoneFrame({
       )}
       <div className="relative rounded-[2.4rem] border border-white/[0.12] bg-gradient-to-b from-white/[0.14] to-white/[0.03] p-[3px] shadow-phone">
         <div className="relative overflow-hidden rounded-[2.25rem] border border-black/60 bg-charcoal">
-          {/* notch / dynamic island */}
-          <div className="pointer-events-none absolute left-1/2 top-2 z-20 h-[18px] w-24 -translate-x-1/2 rounded-full bg-black/85 ring-1 ring-white/10">
-            <span className="absolute right-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#1c2a2e] ring-1 ring-white/10" />
-          </div>
-
           <div className="relative aspect-[9/19] w-full">
-            {showImage ? (
+            {currentSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={src}
+                src={currentSrc}
                 alt={alt}
                 loading={priority ? "eager" : "lazy"}
                 decoding="async"
-                onError={() => setFailedSrc(src)}
+                onError={() => setFailedCount((count) => count + 1)}
                 className="h-full w-full object-cover object-top"
               />
             ) : (
@@ -78,12 +79,24 @@ export function PhoneFrame({
             )}
           </div>
 
-          {/* status bar hint */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-5 pt-2 text-[10px] font-semibold text-white/50">
-            <span>9:41</span>
-            <span className="flex items-center gap-1">
+          {/* Scrim menutup status bar bawaan screenshot agar header mockup rapi. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-10 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.96)_0%,rgba(0,0,0,0.88)_58%,rgba(0,0,0,0)_100%)]"
+          />
+
+          {/* Status bar: jam, dynamic island di tengah, label merek di kanan. */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3.5 pt-2 text-[10px] font-semibold text-white/75">
+            <span className="tabular-nums">9:41</span>
+            <span
+              aria-hidden="true"
+              className="flex h-[18px] w-16 items-center justify-end justify-self-center rounded-full bg-black/90 pr-1.5 ring-1 ring-white/15"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1c2a2e] ring-1 ring-white/10" />
+            </span>
+            <span className="flex items-center justify-end justify-self-end gap-1 whitespace-nowrap">
               <Smartphone className="h-3 w-3" strokeWidth={2} />
-              <span className="tracking-tight">ALLMOVA</span>
+              <span className="text-[9px] tracking-tight">ALLMOVA</span>
             </span>
           </div>
         </div>
