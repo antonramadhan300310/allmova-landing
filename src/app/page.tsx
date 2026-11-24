@@ -5,19 +5,19 @@ import { InstallGuide } from "@/components/InstallGuide";
 import { Navbar } from "@/components/Navbar";
 import { Pricing } from "@/components/Pricing";
 import { Screenshots } from "@/components/Screenshots";
-import { getScreenshotAvailability } from "@/lib/screenshots";
+import { getScreenshots } from "@/lib/screenshots";
 
 export default function HomePage() {
-  const availability = getScreenshotAvailability();
+  const screenshots = getScreenshots();
 
   return (
     <div className="relative flex min-h-screen flex-col bg-charcoal">
       <Navbar />
       <main className="flex-1">
-        <Hero recordAvailable={availability["/screenshots/1-record.png"] ?? false} />
+        <Hero record={screenshots[0]} />
         <InstallGuide />
         <Features />
-        <Screenshots availability={availability} />
+        <Screenshots screenshots={screenshots} />
         <Pricing />
       </main>
       <Footer />

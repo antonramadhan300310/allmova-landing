@@ -1,39 +1,49 @@
 import fs from "node:fs";
 import path from "node:path";
 
+/** Urutan ekstensi yang dicoba saat memuat gambar screenshot. */
+export const SCREENSHOT_EXTENSIONS = ["png", "jpg", "jpeg", "webp"] as const;
+
 export type Screenshot = {
-  src: string;
+  /** Path dasar tanpa ekstensi, mis. `/screenshots/1-record`. */
+  base: string;
+  /** Kandidat URL berurutan; ekstensi yang sudah ada dicoba lebih dulu. */
+  sources: string[];
+  /** True bila minimal satu ekstensi ditemukan saat build. */
+  available: boolean;
   title: string;
   caption: string;
 };
 
-export const screenshots: Screenshot[] = [
+type ScreenshotSlot = Pick<Screenshot, "base" | "title" | "caption">;
+
+const slots: ScreenshotSlot[] = [
   {
-    src: "/screenshots/1-record.png",
+    base: "/screenshots/1-record",
     title: "Perekaman GPS & Peta Bersih",
     caption:
       "Layar rekam tanpa distraksi: jarak, durasi, kecepatan, dan elevasi langsung terbaca.",
   },
   {
-    src: "/screenshots/2-routes-hike.png",
+    base: "/screenshots/2-routes-hike",
     title: "Perencanaan Rute & Jalur Hike",
     caption:
       "Susun rute multi-olahraga, ikuti jalur setapak pendakian, dan lihat estimasi Naismith.",
   },
   {
-    src: "/screenshots/3-poster-3d.png",
+    base: "/screenshots/3-poster-3d",
     title: "Poster Peta 3D ALLMOVA",
     caption:
       "Ekspor kartu rute 3D siap unggah dengan tipografi statistik yang rapi.",
   },
   {
-    src: "/screenshots/4-stiker-foto.png",
+    base: "/screenshots/4-stiker-foto",
     title: "Stiker Transparan di Atas Foto",
     caption:
       "Tempel statistik transparan di atas foto galeri dengan kontrol geser dan zoom.",
   },
   {
-    src: "/screenshots/5-profil-ftp.png",
+    base: "/screenshots/5-profil-ftp",
     title: "Profil Atlet, Kalibrasi FTP & Zona Daya",
     caption:
       "Kalibrasi FTP, pantau zona daya Z1–Z6, dan lacak perkembangan performa.",
@@ -41,19 +51,44 @@ export const screenshots: Screenshot[] = [
 ];
 
 /**
- * Cek keberadaan file di `public/` saat build agar bingkai screenshot tidak
- * memicu request 404 (dan gambar rusak) ketika pemilik belum mengunggah PNG.
+ * Tambahkan versi berbasis mtime + ukuran file agar gambar yang baru diunggah
+ * tidak tertahan cache browser/CDN setelah deploy berikutnya.
  */
-export function isScreenshotAvailable(src: string): boolean {
+function withCacheBust(url: string, filePath: string): string {
   try {
-    return fs.existsSync(path.join(process.cwd(), "public", src));
+    const { mtimeMs, size } = fs.statSync(filePath);
+    return `${url}?v=${Math.round(mtimeMs).toString(36)}${size.toString(36)}`;
   } catch {
-    return false;
+    return url;
   }
 }
 
-export function getScreenshotAvailability(): Record<string, boolean> {
-  return Object.fromEntries(
-    screenshots.map((item) => [item.src, isScreenshotAvailable(item.src)]),
-  );
+function resolveSlot(slot: ScreenshotSlot): Screenshot {
+  const publicDir = path.join(process.cwd(), "public");
+  const existing: string[] = [];
+  const missing: string[] = [];
+
+  for (const ext of SCREENSHOT_EXTENSIONS) {
+    const url = `${slot.base}.${ext}`;
+    const filePath = path.join(publicDir, url);
+    if (fs.existsSync(filePath)) {
+      existing.push(withCacheBust(url, filePath));
+    } else {
+      missing.push(url);
+    }
+  }
+
+  return {
+    ...slot,
+    sources: [...existing, ...missing],
+    available: existing.length > 0,
+  };
+}
+
+/**
+ * Resolusi daftar screenshot saat build. Ekstensi yang ditemukan di `public/`
+ * diletakkan paling depan, sisanya tetap menjadi fallback di sisi klien.
+ */
+export function getScreenshots(): Screenshot[] {
+  return slots.map(resolveSlot);
 }

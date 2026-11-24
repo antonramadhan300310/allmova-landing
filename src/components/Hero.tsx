@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { siteConfig } from "@/config/site";
+import type { Screenshot } from "@/lib/screenshots";
 
 const sports = [
   { label: "Cycling", icon: Bike },
@@ -20,7 +21,7 @@ const sports = [
   { label: "Hike", icon: Mountain },
 ];
 
-export function Hero({ recordAvailable }: { recordAvailable: boolean }) {
+export function Hero({ record }: { record: Screenshot }) {
   return (
     <section id="top" className="relative overflow-hidden">
       <div
@@ -116,9 +117,10 @@ export function Hero({ recordAvailable }: { recordAvailable: boolean }) {
 
         <div className="relative mx-auto w-full max-w-[268px] sm:max-w-[292px] lg:max-w-[308px]">
           <PhoneFrame
-            src="/screenshots/1-record.png"
+            src={record.base}
+            sources={record.sources}
             alt="Layar perekaman GPS ALLMOVA dengan peta bersih"
-            available={recordAvailable}
+            available={record.available}
             glow
             priority
           />
