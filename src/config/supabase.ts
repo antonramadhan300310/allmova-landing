@@ -10,9 +10,9 @@ export const SUPABASE_URL =
  * keamanan data tetap dijaga oleh RLS + fungsi RPC yang hanya mengizinkan Owner.
  */
 export const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "PASTE_SUPABASE_ANON_KEY_DISINI";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_-cz1aM1cEGDUb8IVZzXrsQ_ouhTpBCe";
 
-export const SUPABASE_ANON_KEY_PLACEHOLDER = "PASTE_SUPABASE_ANON_KEY_DISINI";
+export const SUPABASE_ANON_KEY_PLACEHOLDER = "sb_publishable_-cz1aM1cEGDUb8IVZzXrsQ_ouhTpBCe";
 
 /** True bila anon key sudah diisi (bukan placeholder bawaan). */
 export const isSupabaseConfigured =
