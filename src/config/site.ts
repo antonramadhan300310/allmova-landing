@@ -10,6 +10,12 @@ export const siteConfig = {
   description:
     "ALLMOVA merekam aktivitas Cycling, Run, Walking, dan Hike dengan GPS presisi, lalu mengubahnya menjadi animasi rute 3D sinematik serta poster media sosial.",
 
+  /**
+   * Email resmi untuk pertanyaan privasi, bantuan, dan permintaan hapus akun.
+   * GANTI ALAMAT DI BARIS INI dengan email support milik Anda.
+   */
+  supportEmail: "allmova.support@gmail.com",
+
   /** Versi aplikasi Android yang sedang dirilis. */
   appVersion: "v1.2.0",
 

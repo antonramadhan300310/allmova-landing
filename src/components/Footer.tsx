@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Apple, Download, Smartphone } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
@@ -70,9 +71,17 @@ export function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-hairline pt-6 sm:flex-row sm:items-center">
-          <p className="text-[11.5px] text-white/30">
-            © 2026 {siteConfig.name}. Seluruh hak cipta dilindungi.
-          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
+            <p className="text-[11.5px] text-white/30">
+              © 2026 {siteConfig.name}. Seluruh hak cipta dilindungi.
+            </p>
+            <Link
+              href="/privacy"
+              className="text-[11.5px] font-semibold text-white/45 underline-offset-4 transition-colors hover:text-lime hover:underline"
+            >
+              Kebijakan Privasi
+            </Link>
+          </div>
           <a
             href={getWhatsAppContactUrl()}
             target="_blank"
