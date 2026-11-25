@@ -5,6 +5,8 @@ type LogoProps = {
   /** Tampilkan wordmark ΛLLMOVA di samping ikon. */
   withWordmark?: boolean;
   size?: "sm" | "md";
+  /** Tujuan tautan logo. Halaman di luar landing page memakai "/". */
+  href?: string;
 };
 
 export function LogoMark({ className = "" }: { className?: string }) {
@@ -29,14 +31,15 @@ export function Logo({
   className = "",
   withWordmark = true,
   size = "md",
+  href = "#top",
 }: LogoProps) {
   const markSize = size === "sm" ? "h-5 w-6" : "h-6 w-7";
   const textSize = size === "sm" ? "text-base" : "text-lg";
 
   return (
     <Link
-      href="#top"
-      aria-label="ALLMOVA — kembali ke atas"
+      href={href}
+      aria-label="ALLMOVA — kembali ke beranda"
       className={`group inline-flex items-center gap-2.5 ${className}`}
     >
       <LogoMark className={`${markSize} shrink-0`} />
