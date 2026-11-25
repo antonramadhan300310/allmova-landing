@@ -43,10 +43,15 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "toast-in": {
+          from: { opacity: "0", transform: "translateY(10px) scale(0.98)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
       },
       animation: {
         "pulse-dot": "pulse-dot 2.2s ease-in-out infinite",
         float: "float 7s ease-in-out infinite",
+        "toast-in": "toast-in 0.24s ease-out",
       },
     },
   },
