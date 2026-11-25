@@ -10,9 +10,9 @@ export const SUPABASE_URL =
  * keamanan data tetap dijaga oleh RLS + fungsi RPC yang hanya mengizinkan Owner.
  */
 export const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_-cz1aM1cEGDUb8IVZzXrsQ_ouhTpBCe";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkbmJvZHVpbXplc2J2YmVqZHdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMzQwMTgsImV4cCI6MjExMDcxMDAxOH0.yfqH7oSinYkWKDRsiOA8KppVvR6EYT1XZmiaZHVAR_w";
 
-export const SUPABASE_ANON_KEY_PLACEHOLDER = "sb_publishable_-cz1aM1cEGDUb8IVZzXrsQ_ouhTpBCe";
+export const SUPABASE_ANON_KEY_PLACEHOLDER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkbmJvZHVpbXplc2J2YmVqZHdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMzQwMTgsImV4cCI6MjExMDcxMDAxOH0.yfqH7oSinYkWKDRsiOA8KppVvR6EYT1XZmiaZHVAR_w";
 
 /** True bila anon key sudah diisi (bukan placeholder bawaan). */
 export const isSupabaseConfigured =
