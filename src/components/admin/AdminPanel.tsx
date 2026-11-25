@@ -47,6 +47,22 @@ export function AdminPanel() {
     [dismissToast],
   );
 
+  const handleAuthFailure = useCallback(
+    (kind: "unauthorized" | "expired") => {
+      if (kind === "unauthorized") {
+        setAccessDenied(true);
+        return;
+      }
+      setSessionEmail(null);
+      setUsers([]);
+      setAccessDenied(false);
+      setListError(null);
+      void getSupabaseClient()?.auth.signOut();
+      notify("error", "Sesi login berakhir. Silakan masuk kembali.");
+    },
+    [notify],
+  );
+
   const loadUsers = useCallback(async () => {
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -297,6 +313,7 @@ export function AdminPanel() {
         onSignOut={signOut}
         onUpdateSubscription={updateSubscription}
         onResetDevice={resetDevice}
+        onAuthFailure={handleAuthFailure}
         notify={notify}
       />
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />
