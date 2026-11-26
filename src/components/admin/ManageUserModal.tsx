@@ -18,6 +18,7 @@ import { inputClass, labelClass } from "@/components/admin/styles";
 import type { ToastKind } from "@/components/admin/Toast";
 import {
   addDaysToExpiry,
+  editableTier,
   formatExpiryDetail,
   fromDateTimeLocalValue,
   getUserStatus,
@@ -56,7 +57,8 @@ export function ManageUserModal({
   onResetDevice,
   notify,
 }: ManageUserModalProps) {
-  const [tier, setTier] = useState<SubscriptionTier>(user.tier);
+  const [syncedUser, setSyncedUser] = useState(user);
+  const [tier, setTier] = useState<SubscriptionTier>(() => editableTier(user));
   const [expiryLocal, setExpiryLocal] = useState(
     toDateTimeLocalValue(user.proExpiresAt),
   );
@@ -64,6 +66,14 @@ export function ManageUserModal({
   const [busy, setBusy] = useState<BusyState>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  // Setelah refresh dari admin_list_users, form mengikuti data server terbaru.
+  if (syncedUser !== user) {
+    setSyncedUser(user);
+    setTier(editableTier(user));
+    setExpiryLocal(toDateTimeLocalValue(user.proExpiresAt));
+    setIsOwner(user.isOwner);
+  }
 
   const isBusy = busy !== null;
   const draftUser: AdminUser = {
@@ -248,7 +258,7 @@ export function ManageUserModal({
               onClick={() =>
                 void commit(
                   { tier: "free", proExpiresAt: null, isOwner: false },
-                  "Akses pengguna diatur ke Free / Expired.",
+                  "Akses pengguna diatur ke Free.",
                   "quick",
                 )
               }
@@ -256,7 +266,7 @@ export function ManageUserModal({
               className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-400/25 bg-red-400/[0.06] px-3 text-[12px] font-bold text-red-200/90 transition-colors hover:border-red-400/45 hover:bg-red-400/[0.12] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Zap className="h-3.5 w-3.5" strokeWidth={2.4} />
-              Set Expired / Free
+              Set Free
             </button>
           </section>
 
