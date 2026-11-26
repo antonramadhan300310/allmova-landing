@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  Konteks OWASP ZAP untuk DAST pasif ALLMOVA.
+
+  Tujuan utama: ZAP tidak boleh mengunduh berkas biner besar (APK/ZIP) dari
+  /downloads/ agar kuota bandwidth Vercel & Supabase tetap nol beban. Semua URL
+  yang cocok dengan <excregexes> tidak akan pernah di-spider maupun dipindai.
+-->
+<configuration>
+    <context>
+        <name>allmova-passive</name>
+        <desc>DAST pasif ALLMOVA — hanya HTML/JS/CSS, tanpa berkas biner besar</desc>
+        <inscope>true</inscope>
+        <incregexes>https?://.*</incregexes>
+
+        <!-- Berkas unduhan / arsip: JANGAN PERNAH diunduh -->
+        <excregexes>.*\.(apk|aab|zip|ipa|jar|exe|msi|dmg|pkg|deb|rpm|iso|bin)(\?.*)?$</excregexes>
+        <excregexes>.*\.(tar|gz|tgz|bz2|xz|7z|rar)(\?.*)?$</excregexes>
+        <excregexes>https?://[^/]+/downloads/.*</excregexes>
+
+        <!-- Aset statis yang tidak relevan untuk pemindaian pasif -->
+        <excregexes>.*\.(png|jpe?g|gif|webp|avif|ico|svg|bmp|tiff)(\?.*)?$</excregexes>
+        <excregexes>.*\.(woff2?|ttf|otf|eot)(\?.*)?$</excregexes>
+        <excregexes>.*\.(mp4|webm|ogg|mp3|wav|pdf)(\?.*)?$</excregexes>
+    </context>
+</configuration>
