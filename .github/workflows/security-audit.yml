@@ -50,12 +50,12 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout (riwayat penuh untuk Gitleaks)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -136,7 +136,7 @@ jobs:
 
       - name: Upload artefak SAST
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sast-reports
           path: ${{ env.SECURITY_REPORT_DIR }}/
@@ -153,10 +153,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -204,7 +204,7 @@ jobs:
 
       - name: Upload artefak DAST
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dast-reports
           path: ${{ env.SECURITY_REPORT_DIR }}/
@@ -224,10 +224,10 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -236,7 +236,7 @@ jobs:
 
       - name: Upload artefak Supabase
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: supabase-rls-reports
           path: ${{ env.SECURITY_REPORT_DIR }}/
@@ -254,16 +254,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Unduh seluruh artefak audit
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: "*-reports"
           path: ${{ env.SECURITY_REPORT_DIR }}
@@ -274,7 +274,7 @@ jobs:
 
       - name: Upload rapor lengkap
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: web-security-audit-reports
           path: ${{ env.SECURITY_REPORT_DIR }}/
