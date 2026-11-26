@@ -1,6 +1,6 @@
 export type SubscriptionTier = "pro" | "trial" | "free";
 
-export type UserStatus = "owner" | "pro" | "trial" | "expired";
+export type UserStatus = "owner" | "pro" | "trial" | "free";
 
 export type AdminUser = {
   id: string;
@@ -21,13 +21,13 @@ export type SubscriptionPatch = {
   isOwner: boolean;
 };
 
-export type UserFilter = "all" | "pro" | "trial" | "expired";
+export type UserFilter = "all" | "pro" | "trial" | "free";
 
 export type UserCounts = {
   total: number;
   pro: number;
   trial: number;
-  expired: number;
+  free: number;
 };
 
 const TIERS: SubscriptionTier[] = ["pro", "trial", "free"];
@@ -60,7 +60,7 @@ function firstBoolean(row: Record<string, unknown>, keys: string[]): boolean {
 }
 
 function normalizeTier(value: string | null): SubscriptionTier {
-  const normalized = (value ?? "").toLowerCase();
+  const normalized = (value ?? "").trim().toLowerCase();
   return TIERS.find((tier) => tier === normalized) ?? "free";
 }
 
@@ -78,7 +78,9 @@ export function normalizeAdminUser(raw: unknown): AdminUser {
     email: firstString(row, ["email", "user_email"]) ?? "",
     displayName:
       firstString(row, ["display_name", "full_name", "name", "username"]) ?? "",
-    tier: normalizeTier(firstString(row, ["tier", "subscription_tier", "plan"])),
+    tier: normalizeTier(
+      firstString(row, ["plan_tier", "tier", "plan", "subscription_tier"]),
+    ),
     proExpiresAt: normalizeDate(
       firstString(row, ["pro_expires_at", "pro_expiry", "expires_at", "expired_at"]),
     ),
@@ -116,10 +118,20 @@ export function normalizeAdminUsers(payload: unknown): AdminUser[] {
     });
 }
 
+/** Pro tanpa tanggal kadaluarsa dianggap aktif selamanya. */
 export function isExpired(user: AdminUser, now: number = Date.now()): boolean {
-  if (!user.proExpiresAt) return true;
+  if (!user.proExpiresAt) return false;
   const expiry = new Date(user.proExpiresAt).getTime();
   return Number.isNaN(expiry) || expiry <= now;
+}
+
+export function isProActive(user: AdminUser, now: number = Date.now()): boolean {
+  if (user.tier !== "pro" && user.tier !== "trial") return false;
+  return !isExpired(user, now);
+}
+
+function isTrialSource(user: AdminUser): boolean {
+  return (user.source ?? "").trim().toLowerCase() === "trial";
 }
 
 export function getUserStatus(
@@ -127,19 +139,25 @@ export function getUserStatus(
   now: number = Date.now(),
 ): UserStatus {
   if (user.isOwner) return "owner";
-  if (user.tier === "pro") {
-    // Pro tanpa tanggal kadaluarsa dianggap lifetime.
-    return user.proExpiresAt === null || !isExpired(user, now) ? "pro" : "expired";
-  }
-  if (user.tier === "trial") return isExpired(user, now) ? "expired" : "trial";
-  return "expired";
+  if (!isProActive(user, now)) return "free";
+  return user.tier === "trial" || isTrialSource(user) ? "trial" : "pro";
+}
+
+/** Tier awal untuk form edit: Pro aktif tidak boleh jatuh ke Free. */
+export function editableTier(
+  user: AdminUser,
+  now: number = Date.now(),
+): SubscriptionTier {
+  if (user.isOwner) return "pro";
+  if (getUserStatus(user, now) === "free") return "free";
+  return user.tier === "trial" ? "trial" : "pro";
 }
 
 export const statusLabels: Record<UserStatus, string> = {
-  owner: "👑 OWNER",
+  owner: "OWNER",
   pro: "PRO",
-  trial: "TRIAL",
-  expired: "EXPIRED",
+  trial: "PRO TRIAL",
+  free: "FREE",
 };
 
 export function countUsers(
@@ -152,10 +170,10 @@ export function countUsers(
       acc.total += 1;
       if (status === "owner" || status === "pro") acc.pro += 1;
       else if (status === "trial") acc.trial += 1;
-      else acc.expired += 1;
+      else acc.free += 1;
       return acc;
     },
-    { total: 0, pro: 0, trial: 0, expired: 0 },
+    { total: 0, pro: 0, trial: 0, free: 0 },
   );
 }
 
@@ -173,7 +191,7 @@ export function filterUsers(
       filter === "all" ||
       (filter === "pro" && (status === "owner" || status === "pro")) ||
       (filter === "trial" && status === "trial") ||
-      (filter === "expired" && status === "expired");
+      (filter === "free" && status === "free");
 
     if (!matchesFilter) return false;
     if (needle === "") return true;
@@ -214,12 +232,11 @@ export function formatExpiryDetail(
   now: number = Date.now(),
 ): string {
   if (user.isOwner) return "Lifetime akses Owner";
-  if (user.tier === "pro" && user.proExpiresAt === null) return "Pro tanpa batas waktu";
+  if (getUserStatus(user, now) === "free") return "Tidak aktif";
 
   const days = daysUntilExpiry(user.proExpiresAt, now);
-  if (days === null) return "Belum ada masa aktif";
-  if (days <= 0) return `Berakhir ${Math.abs(days)} hari lalu`;
-  return `Sisa ${days} hari`;
+  if (days === null) return "Pro tanpa batas waktu";
+  return `Sisa ${Math.max(days, 0)} hari`;
 }
 
 /** +N hari dari tanggal kadaluarsa aktif, atau dari hari ini bila sudah lewat. */

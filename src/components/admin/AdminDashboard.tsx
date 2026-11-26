@@ -55,8 +55,8 @@ type AdminTab = "users" | "routes";
 const filterTabs: { value: UserFilter; label: string }[] = [
   { value: "all", label: "Semua" },
   { value: "pro", label: "PRO" },
-  { value: "trial", label: "Trial" },
-  { value: "expired", label: "Expired" },
+  { value: "trial", label: "PRO TRIAL" },
+  { value: "free", label: "FREE" },
 ];
 
 function initials(user: AdminUser): string {
@@ -182,7 +182,7 @@ export function AdminDashboard({
     all: counts.total,
     pro: counts.pro,
     trial: counts.trial,
-    expired: counts.expired,
+    free: counts.free,
   };
 
   return (
@@ -326,9 +326,9 @@ export function AdminDashboard({
                 accent="border-sky-400/30 bg-sky-400/10 text-sky-200"
               />
               <StatCard
-                label="Expired / Free"
-                value={counts.expired}
-                hint="Perlu tindak lanjut"
+                label="Free"
+                value={counts.free}
+                hint="Tanpa langganan aktif"
                 icon={TimerOff}
                 accent="border-white/10 bg-white/[0.04] text-white/45"
               />
