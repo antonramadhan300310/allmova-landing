@@ -1,0 +1,282 @@
+name: Security Audit
+
+# Audit keamanan menyeluruh ALLMOVA (web & admin panel).
+#  - pull_request → main : SAST + Supabase RLS (cepat, tanpa menyentuh Vercel)
+#  - workflow_dispatch   : semua job, termasuk DAST pasif
+#
+# Mode report-only untuk temuan medium/low. Job digagalkan hanya bila ada
+# kebocoran secret fatal atau celah kritis RLS/RPC/Storage Supabase.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_dast:
+        description: "Jalankan DAST pasif (OWASP ZAP baseline + cek security headers)"
+        type: boolean
+        default: true
+      run_supabase_rls_check:
+        description: "Jalankan audit RLS / RPC / Storage Supabase"
+        type: boolean
+        default: true
+      target_url:
+        description: "URL target untuk DAST"
+        type: string
+        default: "https://allmova.vercel.app"
+
+permissions:
+  contents: read
+
+# Hemat kuota Actions: run lama di PR/branch yang sama otomatis dibatalkan.
+concurrency:
+  group: "security-audit-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  NEXT_TELEMETRY_DISABLED: "1"
+  SECURITY_REPORT_DIR: "reports"
+  GITLEAKS_VERSION: "8.30.1"
+  TARGET_URL: "${{ github.event.inputs.target_url || 'https://allmova.vercel.app' }}"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1 — SAST: kode, secret, dependensi
+  # ---------------------------------------------------------------------------
+  sast-web-audit:
+    name: SAST — Kode, Secret & Dependensi
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout (riwayat penuh untuk Gitleaks)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: Build produksi
+        run: npm run build
+
+      - name: Dependency audit (report-only)
+        run: |
+          mkdir -p "$SECURITY_REPORT_DIR"
+          npm audit --audit-level=high --json > "$SECURITY_REPORT_DIR/npm-audit.json" || true
+          npm audit --audit-level=high 2>&1 | tee "$SECURITY_REPORT_DIR/npm-audit.txt" || true
+
+      - name: Gitleaks — kode & riwayat commit
+        run: |
+          mkdir -p "$SECURITY_REPORT_DIR"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks version
+          # --exit-code 0: keputusan fatal diambil oleh scan-secrets.mjs, sehingga
+          # temuan medium/low tetap report-only.
+          /tmp/gitleaks detect \
+            --source . \
+            --config .gitleaks.toml \
+            --no-banner \
+            --redact \
+            --exit-code 0 \
+            --report-format json \
+            --report-path "$SECURITY_REPORT_DIR/gitleaks.json"
+          # Laporan kedua tanpa redaksi hanya untuk klasifikasi role JWT di riwayat
+          # commit. Berkas ini disimpan di /tmp (tidak pernah diunggah) dan dihapus
+          # tepat setelah dipakai.
+          /tmp/gitleaks detect \
+            --source . \
+            --config .gitleaks.toml \
+            --no-banner \
+            --exit-code 0 \
+            --report-format json \
+            --report-path /tmp/gitleaks-full.json > /dev/null 2>&1 || true
+
+      - name: Gerbang fatal — secret, JWT & kredensial admin
+        env:
+          GITLEAKS_FULL_REPORT: /tmp/gitleaks-full.json
+        run: |
+          set +e
+          node scripts/security/scan-secrets.mjs
+          code=$?
+          rm -f /tmp/gitleaks-full.json
+          exit $code
+
+      - name: Semgrep SAST (report-only)
+        run: |
+          mkdir -p "$SECURITY_REPORT_DIR"
+          # Runner Ubuntu baru memblokir pip sistem (PEP 668); coba dua jalur.
+          python3 -m pip install --quiet --disable-pip-version-check semgrep ||
+            python3 -m pip install --quiet --disable-pip-version-check --break-system-packages semgrep ||
+            true
+          export PATH="$HOME/.local/bin:$PATH"
+          if ! command -v semgrep >/dev/null 2>&1; then
+            echo "::warning::Semgrep tidak terpasang; laporan SAST dilewati (report-only)."
+            exit 0
+          fi
+          semgrep scan \
+            --config p/typescript \
+            --config p/react \
+            --config p/nextjs \
+            --config p/owasp-top-ten \
+            --metrics off \
+            --quiet \
+            --json --output "$SECURITY_REPORT_DIR/semgrep.json" \
+            src || true
+
+      - name: Upload artefak SAST
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sast-reports
+          path: ${{ env.SECURITY_REPORT_DIR }}/
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Job 2 — DAST pasif (hanya workflow_dispatch)
+  # ---------------------------------------------------------------------------
+  dast-passive-audit:
+    name: DAST Pasif — ZAP Baseline & Security Headers
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_dast }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cek HTTP Security Headers & unduhan APK
+        run: node scripts/security/check-security-headers.mjs
+
+      - name: Siapkan konteks ZAP (exclude *.apk / *.zip / /downloads/*)
+        run: |
+          mkdir -p "$SECURITY_REPORT_DIR"
+          cp scripts/security/zap-context.xml "$SECURITY_REPORT_DIR/zap-context.xml"
+
+      - name: OWASP ZAP Baseline (100% pasif, tanpa active scan)
+        id: zap
+        continue-on-error: true
+        run: |
+          set +e
+          docker run --rm \
+            -v "$PWD/$SECURITY_REPORT_DIR:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zap-stable:latest \
+            zap-baseline.py \
+              -t "$TARGET_URL" \
+              -n zap-context.xml \
+              -m 2 \
+              -T 10 \
+              -I \
+              -s \
+              -r zap-report.html \
+              -w zap-report.md \
+              -J zap-report.json 2>&1 | tee "$SECURITY_REPORT_DIR/zap-run.log"
+          code=${PIPESTATUS[0]}
+          echo "zap_exit=$code" >> "$GITHUB_OUTPUT"
+          echo "ZAP exit code: $code"
+          exit 0
+
+      - name: Pastikan konteks ZAP termuat (tidak mengunduh berkas besar)
+        run: |
+          log="$SECURITY_REPORT_DIR/zap-run.log"
+          if [ -f "$log" ] && grep -q "Failed to load context file" "$log"; then
+            echo "::error::Konteks ZAP gagal dimuat — pengecualian *.apk/*.zip tidak aktif."
+            exit 1
+          fi
+          if grep -qiE "downloads/ALLMOVA\.apk" "$log"; then
+            echo "::warning::Log ZAP menyebut berkas APK; periksa kembali aturan exclude."
+          fi
+
+      - name: Upload artefak DAST
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: dast-reports
+          path: ${{ env.SECURITY_REPORT_DIR }}/
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Job 3 — Audit RLS / RPC / Storage Supabase (maks ~14 request kecil)
+  # ---------------------------------------------------------------------------
+  supabase-rls-audit:
+    name: Supabase — RLS, RPC & Storage
+    if: ${{ github.event_name == 'pull_request' || inputs.run_supabase_rls_check != false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Audit RLS / RPC / Storage
+        run: node scripts/security/verify-supabase-rls.mjs
+
+      - name: Upload artefak Supabase
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: supabase-rls-reports
+          path: ${{ env.SECURITY_REPORT_DIR }}/
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Job 4 — Rapor gabungan + quick wins security headers
+  # ---------------------------------------------------------------------------
+  security-report:
+    name: Rapor Gabungan & Quick Wins
+    needs: [sast-web-audit, dast-passive-audit, supabase-rls-audit]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Unduh seluruh artefak audit
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          pattern: "*-reports"
+          path: ${{ env.SECURITY_REPORT_DIR }}
+          merge-multiple: true
+
+      - name: Susun rapor & tegakkan gerbang fatal
+        run: node scripts/security/build-summary.mjs
+
+      - name: Upload rapor lengkap
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: web-security-audit-reports
+          path: ${{ env.SECURITY_REPORT_DIR }}/
+          retention-days: 14
+          if-no-files-found: warn

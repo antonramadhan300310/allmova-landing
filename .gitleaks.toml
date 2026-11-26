@@ -1,0 +1,68 @@
+# ALLMOVA — aturan Gitleaks untuk audit keamanan CI.
+#
+# Prinsip:
+#  * `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` memang publik
+#    (anon / publishable key), jadi diizinkan lewat [allowlist].
+#  * Yang diblokir keras: service_role key, private key, dan kredensial admin hardcoded.
+#  * JWT dengan payload `"role":"service_role"` tidak bisa dideteksi murni dengan regex,
+#    karena itu scripts/security/scan-secrets.mjs men-decode setiap JWT dan menjadi
+#    gerbang fatal yang sebenarnya.
+
+title = "ALLMOVA security audit"
+
+[extend]
+useDefault = true
+
+# --- Blokir keras: service_role key yang ditempel di kode -------------------
+[[rules]]
+id = "allmova-supabase-service-role-key"
+description = "Supabase service_role key hardcoded (bypass total RLS)"
+regex = '''(?i)(?:supabase[_-]?)?service[_-]?role[_-]?(?:key|secret|jwt)\s*[:=]\s*["']?[A-Za-z0-9._\-]{20,}'''
+keywords = ["service_role", "service-role", "servicerole"]
+tags = ["key", "supabase", "fatal"]
+
+# --- Blokir keras: private key ---------------------------------------------
+[[rules]]
+id = "allmova-private-key"
+description = "Private key (RSA/EC/OpenSSH/PGP) tidak boleh masuk repository"
+regex = '''-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----'''
+keywords = ["PRIVATE KEY"]
+tags = ["key", "private-key", "fatal"]
+
+# --- Blokir keras: kredensial admin hardcoded ------------------------------
+[[rules]]
+id = "allmova-hardcoded-admin-credential"
+description = "Kredensial admin hardcoded (password/secret/token panel /admin)"
+regex = '''(?i)(?:admin[_-]?(?:password|passwd|pwd|secret|token|api[_-]?key)|(?:password|passwd|pwd)\s*(?:untuk\s*)?admin)\s*[:=]\s*["'][^"'\s]{8,}["']'''
+keywords = ["admin_password", "admin-password", "admin_secret", "admin_token"]
+tags = ["credential", "admin", "fatal"]
+
+[allowlist]
+description = "Nilai yang memang publik atau bukan rahasia"
+
+# Cocokkan regex allowlist terhadap seluruh baris, sehingga JWT anon yang sah
+# tetap diizinkan selama berada di baris `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+regexTarget = "line"
+
+paths = [
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.next/''',
+  '''(^|/)out/''',
+  '''(^|/)public/downloads/''',
+  '''(^|/)public/screenshots/''',
+  '''\.(?:png|jpe?g|gif|webp|ico|apk|zip|woff2?|ttf|eot)$''',
+  '''(^|/)\.gitleaks\.toml$''',
+]
+
+regexes = [
+  # Variabel lingkungan publik Next.js — nilainya memang dikirim ke browser.
+  '''NEXT_PUBLIC_SUPABASE_URL''',
+  '''NEXT_PUBLIC_SUPABASE_ANON_KEY''',
+  '''SUPABASE_ANON_KEY_PLACEHOLDER''',
+  # Publishable key format baru Supabase (aman untuk publik).
+  '''sb_publishable_[A-Za-z0-9_\-]+''',
+  # Contoh/nilai dummy di dokumentasi.
+  '''PASTE_SUPABASE_ANON_KEY_DISINI''',
+  '''(?:example|dummy|sample|placeholder|changeme|your[-_]?key)''',
+]
