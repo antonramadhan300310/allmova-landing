@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Apple, Download, Smartphone } from "lucide-react";
+import { Apple, BookOpen, Download, Smartphone } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { getWhatsAppContactUrl, siteConfig } from "@/config/site";
@@ -64,6 +64,15 @@ export function Footer() {
                     <Smartphone className="h-3.5 w-3.5" strokeWidth={2.2} />
                     Panduan Instalasi
                   </a>
+                </li>
+                <li>
+                  <Link
+                    href="/tutorial"
+                    className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-white/45 transition-colors hover:text-white"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" strokeWidth={2.2} />
+                    Panduan Penggunaan
+                  </Link>
                 </li>
               </ul>
             </div>
