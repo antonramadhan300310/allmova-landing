@@ -4,7 +4,7 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 export const metadata: Metadata = {
   title: { absolute: "ALLMOVA Admin — Manajemen Langganan" },
   description:
-    "Panel internal ALLMOVA untuk mengelola tier langganan, masa aktif Pro, dan sesi perangkat pengguna.",
+    "Panel internal ALLMOVA untuk mengelola tier langganan, masa aktif Pro, sesi perangkat pengguna, rute favorit, dan pengumuman aplikasi.",
   robots: {
     index: false,
     follow: false,

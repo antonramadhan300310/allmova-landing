@@ -25,6 +25,7 @@ import {
 
 export function AdminPanel() {
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [booting, setBooting] = useState(isSupabaseConfigured);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -54,6 +55,7 @@ export function AdminPanel() {
         return;
       }
       setSessionEmail(null);
+      setSessionUserId(null);
       setUsers([]);
       setAccessDenied(false);
       setListError(null);
@@ -119,6 +121,7 @@ export function AdminPanel() {
         if (!active) return;
         const email = data.session?.user.email ?? null;
         setSessionEmail(email);
+        setSessionUserId(data.session?.user.id ?? null);
         setBooting(false);
         if (email) await loadUsers();
       } catch {
@@ -130,11 +133,13 @@ export function AdminPanel() {
       (event, session) => {
         if (event === "SIGNED_OUT") {
           setSessionEmail(null);
+          setSessionUserId(null);
           setUsers([]);
           setAccessDenied(false);
           setListError(null);
         } else if (session?.user.email) {
           setSessionEmail(session.user.email);
+          setSessionUserId(session.user.id);
         }
       },
     );
@@ -161,6 +166,7 @@ export function AdminPanel() {
         if (error) return mapAuthErrorMessage(error.message);
 
         setSessionEmail(data.user?.email ?? email);
+        setSessionUserId(data.user?.id ?? null);
         await loadUsers();
         return null;
       } catch (error) {
@@ -174,6 +180,7 @@ export function AdminPanel() {
 
   const signOut = useCallback(() => {
     setSessionEmail(null);
+    setSessionUserId(null);
     setUsers([]);
     setAccessDenied(false);
     setListError(null);
@@ -306,6 +313,7 @@ export function AdminPanel() {
     <>
       <AdminDashboard
         email={sessionEmail}
+        userId={sessionUserId}
         users={users}
         loading={loadingUsers}
         listError={listError}

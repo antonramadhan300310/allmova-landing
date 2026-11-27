@@ -8,6 +8,7 @@ import {
   Crown,
   Loader2,
   LogOut,
+  Megaphone,
   RefreshCw,
   Route as RouteIcon,
   Search,
@@ -18,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { Logo, LogoMark } from "@/components/Logo";
+import { AnnouncementsPanel } from "@/components/admin/AnnouncementsPanel";
 import { CuratedRoutesPanel } from "@/components/admin/CuratedRoutesPanel";
 import { ManageUserModal } from "@/components/admin/ManageUserModal";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -36,6 +38,7 @@ import {
 
 type AdminDashboardProps = {
   email: string;
+  userId: string | null;
   users: AdminUser[];
   loading: boolean;
   listError: string | null;
@@ -50,7 +53,7 @@ type AdminDashboardProps = {
   notify: (kind: ToastKind, message: string) => void;
 };
 
-type AdminTab = "users" | "routes";
+type AdminTab = "users" | "routes" | "announcements";
 
 const filterTabs: { value: UserFilter; label: string }[] = [
   { value: "all", label: "Semua" },
@@ -151,6 +154,7 @@ function UserIdentity({ user }: { user: AdminUser }) {
 
 export function AdminDashboard({
   email,
+  userId,
   users,
   loading,
   listError,
@@ -250,6 +254,12 @@ export function AdminDashboard({
             [
               { value: "users", label: "Pengguna", icon: Users, count: counts.total },
               { value: "routes", label: "Rute Favorit", icon: RouteIcon, count: null },
+              {
+                value: "announcements",
+                label: "Pengumuman",
+                icon: Megaphone,
+                count: null,
+              },
             ] as const
           ).map((item) => {
             const active = tab === item.value;
@@ -287,6 +297,12 @@ export function AdminDashboard({
       <main className="flex-1">
         {tab === "routes" ? (
           <CuratedRoutesPanel notify={notify} onAuthFailure={onAuthFailure} />
+        ) : tab === "announcements" ? (
+          <AnnouncementsPanel
+            userId={userId}
+            notify={notify}
+            onAuthFailure={onAuthFailure}
+          />
         ) : (
           <div className="container-page pb-14 pt-6 sm:pt-8">
             <div className="flex flex-col gap-1">
